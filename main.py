@@ -6,7 +6,7 @@ from utils.steam_blocklist import find_steam_games
 
 find_steam_games()
 
-def load_disabled_apps(filename='./assets/blocklist.json'):
+def load_disabled_apps():
     with open(filename, 'r') as file:
         return json.load(file)
 

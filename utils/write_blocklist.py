@@ -2,7 +2,7 @@ import os
 import json
 
 def write_blocklist(process):
-    file_path = os.path.join(os.environ['USERPROFILE'], 'AppData', 'Roaming', 'SmoothedScroll', 'blacklist.json')
+    file_path = '../assets/blocklist.json'
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     # print(file_path)
     blocklist = []

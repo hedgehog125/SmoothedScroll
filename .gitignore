@@ -1,0 +1,4 @@
+/__pycache__/
+/dist/
+taskbar.py
+gui.py

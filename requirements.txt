@@ -1,0 +1,5 @@
+easing-functions==1.0.4
+psutil==6.0.0
+pywin32==306
+TKinterModernThemes==1.10.2
+pystray

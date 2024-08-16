@@ -4,14 +4,15 @@ from win32con import VK_SHIFT
 from SmoothedScroll import (SmoothedScroll, SmoothedScrollConfig, AppConfig, ScrollConfig)
 from utils.steam_blocklist import find_steam_games
 
-find_steam_games()
-
 def load_disabled_apps():
-    with open(filename, 'r') as file:
+    with open('./assets/blocklist.json', 'r') as file:
         return json.load(file)
+
 
 if __name__ == '__main__':
     disabled_apps = load_disabled_apps()
+
+    # Create the app configurations
     app_configs = [
         AppConfig(
             regexp=r'.*',
@@ -29,13 +30,18 @@ if __name__ == '__main__':
             ),
         ),
     ]
+
+    # Add a config for each disabled app
     for app in disabled_apps:
         app_configs.append(AppConfig(
-            regexp=r'.*' + app,
+            regexp=rf'.*{app}.*',
             enabled=False
         ))
+
     SmoothedScroll(
         config=SmoothedScrollConfig(
             app_config=app_configs
         )
     ).start(is_block=True)
+
+find_steam_games()

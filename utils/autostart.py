@@ -5,7 +5,7 @@ def get_current_file_path():
 
 def main():
     current_file_path = get_current_file_path()
-    print("Путь до файла:", current_file_path)
+    #print("Path:", current_file_path)
 
 if __name__ == "__main__":
     main()

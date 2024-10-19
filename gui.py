@@ -1,5 +1,6 @@
 import multiprocessing
 import tkinter as tk
+from tkinter import messagebox 
 from tkinter import ttk
 import json
 import os
@@ -12,9 +13,6 @@ from SmoothedScroll import SmoothedScroll, SmoothedScrollConfig, AppConfig, Scro
 from utils.steam_blocklist import find_steam_games
 
 def smoothed_scroll_task(config: SmoothedScrollConfig):
-    """
-    Function to run SmoothedScroll in a separate process.
-    """
     try:
         smoothed_scroll_instance = SmoothedScroll(config=config)
         smoothed_scroll_instance.start(is_block=True)
@@ -24,9 +22,7 @@ def smoothed_scroll_task(config: SmoothedScrollConfig):
 class ScrollConfigApp(TKMT.ThemedTKinterFrame):
     def __init__(self, theme, mode):
         super().__init__("Smoothed Scroll Configuration", theme, mode)
-
         self.root.iconbitmap("./assets/icon.ico")
-
         self.distance_var = tk.IntVar(value=120)
         self.acceleration_var = tk.DoubleVar(value=1.0)
         self.opposite_acceleration_var = tk.DoubleVar(value=1.2)
@@ -35,56 +31,40 @@ class ScrollConfigApp(TKMT.ThemedTKinterFrame):
         self.duration_var = tk.IntVar(value=500)
         self.pulse_scale_var = tk.DoubleVar(value=3.0)
         self.inverted_scroll_var = tk.BooleanVar(value=False)
-
         self.smoothed_scroll_process = None
-
         self.setup_gui()
-
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
-
         self.run()
 
     def setup_gui(self):
-
         scroll_frame = self.addLabelFrame("Scroll Settings")
-
         scroll_frame.Label("Scroll Distance (px):")
         scroll_frame.NumericalSpinbox(0, 2000, 100, self.distance_var)
-
         scroll_frame.Label("Acceleration (x):")
         scroll_frame.Entry(self.acceleration_var)
-
         scroll_frame.Label("Opposite Acceleration (x):")
         scroll_frame.Entry(self.opposite_acceleration_var)
-
         scroll_frame.Label("Acceleration Delta (ms):")
         scroll_frame.Entry(self.acceleration_delta_var)
-
         scroll_frame.Label("Max Acceleration Steps:")
         scroll_frame.NumericalSpinbox(0, 30, 1, self.acceleration_max_var)
-
         scroll_frame.Label("Scroll Duration (ms):")
         scroll_frame.NumericalSpinbox(0, 1000, 50, self.duration_var)
-
         scroll_frame.Label("Pulse Scale (x):")
         scroll_frame.Entry(self.pulse_scale_var)
-
         scroll_frame.SlideSwitch("Inverted Scroll", self.inverted_scroll_var)
-
         scroll_frame.AccentButton("Apply Settings", self.apply_settings)
-
         scroll_frame.AccentButton("Start Smoothed Scroll", self.start_smoothed_scroll)
-
         scroll_frame.AccentButton("Stop Smoothed Scroll", self.stop_smoothed_scroll)
 
     def apply_settings(self):
-
-        if self.smoothed_scroll_process is not None and self.smoothed_scroll_process.is_alive():
-            print("Restarting Smoothed Scroll with new settings.")
+        print("Applying settings...")
+        if self.smoothed_scroll_process and self.smoothed_scroll_process.is_alive():
+            print("Smoothed Scroll is running. Restarting with new settings...")
             self.stop_smoothed_scroll()
-            self.start_smoothed_scroll()
-        else:
-            print("Settings applied. Smoothed Scroll is not running.")
+
+        self.start_smoothed_scroll()
+        print("Settings applied and Smoothed Scroll restarted.")
 
     def start_smoothed_scroll(self):
         if self.smoothed_scroll_process and self.smoothed_scroll_process.is_alive():
@@ -104,7 +84,6 @@ class ScrollConfigApp(TKMT.ThemedTKinterFrame):
                     acceleration_max=self.acceleration_max_var.get(),
                     duration=self.duration_var.get(),
                     pulse_scale=self.pulse_scale_var.get(),
-
                     ease=easing_functions.LinearInOut,  
                     inverted=self.inverted_scroll_var.get(),
                     horizontal_scroll_key=VK_SHIFT
@@ -171,14 +150,15 @@ class ScrollConfigApp(TKMT.ThemedTKinterFrame):
             return []
 
     def on_closing(self):
-        """Handle the window close event to ensure clean shutdown."""
         print("Closing application...")
-
         self.stop_smoothed_scroll()
-
+        messagebox.showinfo(
+            "Smoothed Scroll",
+            "Smoothed Scroll is running from the system tray. Click OK to close the application."
+        )
         self.root.destroy()
         print("Application closed.")
 
-if __name__ == "__main__":
-    multiprocessing.freeze_support()  
+def start_gui_app():
+    multiprocessing.freeze_support()
     ScrollConfigApp("sun-valley", "light")

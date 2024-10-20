@@ -6,6 +6,8 @@ import os
 import win32gui
 import win32process
 import psutil
+import threading
+from gui import start_gui_app
 
 BLOCKLIST_PATH = './assets/blocklist.json'
 ICON_PATH = './assets/icon.ico'  
@@ -44,11 +46,9 @@ def load_blocklist():
             if not isinstance(blocklist, list):
                 print("Blocklist is not a list. Resetting to empty list.")
                 return []
-
             blocklist = [str(item) for item in blocklist]
             return blocklist
     except json.JSONDecodeError:
-
         print("JSON decode error in blocklist.json. Resetting to empty list.")
         return []
     except Exception as e:
@@ -65,7 +65,6 @@ def write_blocklist(blocklist):
 def toggle_blocklist(icon, process_name):
     blocklist = load_blocklist()
     process_name = str(process_name)  
-    print(f"Process to toggle: {process_name}")  
     write_blocklist(blocklist)  
     refresh_menu(icon)
 
@@ -74,7 +73,6 @@ def refresh_menu(icon):
     blocklist = load_blocklist()
     exceptions_menu = []
     for process in open_processes:
-
         exceptions_menu.append(
             item(
                 process,
@@ -85,6 +83,7 @@ def refresh_menu(icon):
 
     icon.menu = pystray.Menu(
         item('Exceptions', pystray.Menu(*exceptions_menu)),
+        item('Open GUI', lambda: open_gui()),
         item('Refresh', lambda: refresh_menu(icon)),
         item('Close', lambda: stop_icon(icon))
     )
@@ -92,6 +91,10 @@ def refresh_menu(icon):
 
 def stop_icon(icon):
     icon.stop()
+
+def open_gui():
+    gui_thread = threading.Thread(target=start_gui_app, daemon=True)
+    gui_thread.start()
 
 def run_tray():
     icon_image = load_icon()

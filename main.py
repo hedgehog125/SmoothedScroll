@@ -14,13 +14,13 @@ def signal_handler(sig, frame):
 
 def run_gui():
     try:
-        start_gui_app()  
+        start_gui_app()
     except Exception as e:
         print(f"Error in GUI thread: {e}")
 
 def run_taskbar():
     try:
-        start_taskbar_icon()  
+        start_taskbar_icon()
     except Exception as e:
         print(f"Error in Taskbar thread: {e}")
 
@@ -29,19 +29,26 @@ def main():
     signal.signal(signal.SIGTERM, signal_handler) 
 
     try:
-        gui_thread = threading.Thread(target=run_gui)
-        taskbar_thread = threading.Thread(target=run_taskbar)
+        gui_thread = threading.Thread(target=run_gui, daemon=True)
+        taskbar_thread = threading.Thread(target=run_taskbar, daemon=True)
+        
         print("Starting GUI and Taskbar...")
         gui_thread.start()
         taskbar_thread.start()
-        gui_thread.join()
         taskbar_thread.join()
+        print("Taskbar closed, shutting down...")
+        sys.exit(0)
+
     except KeyboardInterrupt:
         print("Keyboard interrupt received.")
         terminate_processes()
+        sys.exit(0)
+        
     except Exception as e:
         print(f"Unexpected error: {e}")
         terminate_processes()
+        sys.exit(0)
+    
     finally:
         terminate_processes()
 

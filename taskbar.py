@@ -9,7 +9,6 @@ import psutil
 
 BLOCKLIST_PATH = './assets/blocklist.json'
 ICON_PATH = './assets/icon.ico'  
-TOAST_DURATION = 5  
 
 def load_icon():
     try:

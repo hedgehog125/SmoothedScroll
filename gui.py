@@ -1,19 +1,18 @@
-import multiprocessing
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 import json
 import os
-import threading  
+import multiprocessing
+import threading
 from win32con import VK_SHIFT
-
-import TKinterModernThemes as TKMT
+import sv_ttk
 import easing_functions
 from SmoothedScroll import SmoothedScroll, SmoothedScrollConfig, AppConfig, ScrollConfig
 from utils.steam_blocklist import find_steam_games
 
 CONFIG_FILE_PATH = "./assets/config.json"
 DEFAULT_CONFIG = {
-    "theme": "sun-valley",
+    "theme": "dark",
     "mode": "light",
     "scroll_distance": 120,
     "acceleration": 1.0,
@@ -22,7 +21,8 @@ DEFAULT_CONFIG = {
     "acceleration_max": 14,
     "scroll_duration": 500,
     "pulse_scale": 3.0,
-    "inverted_scroll": False
+    "inverted_scroll": False,
+    "message_shown": False
 }
 
 def smoothed_scroll_task(config: SmoothedScrollConfig):
@@ -32,12 +32,18 @@ def smoothed_scroll_task(config: SmoothedScrollConfig):
     except Exception as e:
         print(f"Error in SmoothedScroll process: {e}")
 
-class ScrollConfigApp(TKMT.ThemedTKinterFrame):
+class ScrollConfigApp:
     def __init__(self):
         self.config = self.load_config()
 
-        super().__init__("Smoothed Scroll Configuration", self.config["theme"], self.config["mode"])
+        self.root = tk.Tk()
+        self.root.title("Smoothed Scroll GUI")
         self.root.iconbitmap("./assets/icon.ico")
+        self.root.geometry("400x750")
+        self.root.resizable(False, False)
+        self.center_window()
+
+        sv_ttk.set_theme(self.config.get("theme", "dark"))
 
         self.distance_var = tk.IntVar(value=self.config.get("scroll_distance", 120))
         self.acceleration_var = tk.DoubleVar(value=self.config.get("acceleration", 1.0))
@@ -47,34 +53,58 @@ class ScrollConfigApp(TKMT.ThemedTKinterFrame):
         self.duration_var = tk.IntVar(value=self.config.get("scroll_duration", 500))
         self.pulse_scale_var = tk.DoubleVar(value=self.config.get("pulse_scale", 3.0))
         self.inverted_scroll_var = tk.BooleanVar(value=self.config.get("inverted_scroll", False))
+        
+        self.theme_var = tk.StringVar(value=self.config.get("theme", "dark"))
 
         self.smoothed_scroll_process = None
         self.setup_gui()
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
-        self.run()
+
+    def center_window(self):
+        self.root.update_idletasks()
+        width = self.root.winfo_width()
+        height = self.root.winfo_height()
+        x = (self.root.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.root.winfo_screenheight() // 2) - (height // 2)
+        self.root.geometry(f"{width}x{height}+{x}+{y}")
 
     def setup_gui(self):
-        scroll_frame = self.addLabelFrame("Scroll Settings")
-        scroll_frame.Label("Scroll Distance (px):")
-        scroll_frame.NumericalSpinbox(0, 2000, 100, self.distance_var)
-        scroll_frame.Label("Acceleration (x):")
-        scroll_frame.Entry(self.acceleration_var)
-        scroll_frame.Label("Opposite Acceleration (x):")
-        scroll_frame.Entry(self.opposite_acceleration_var)
-        scroll_frame.Label("Acceleration Delta (ms):")
-        scroll_frame.Entry(self.acceleration_delta_var)
-        scroll_frame.Label("Max Acceleration Steps:")
-        scroll_frame.NumericalSpinbox(0, 30, 1, self.acceleration_max_var)
-        scroll_frame.Label("Scroll Duration (ms):")
-        scroll_frame.NumericalSpinbox(0, 1000, 50, self.duration_var)
-        scroll_frame.Label("Pulse Scale (x):")
-        scroll_frame.Entry(self.pulse_scale_var)
-        scroll_frame.SlideSwitch("Inverted Scroll", self.inverted_scroll_var)
+        frame = ttk.LabelFrame(self.root, text="Scroll Settings")
+        frame.pack(padx=10, pady=10, fill="x")
 
-        scroll_frame.AccentButton("Apply Settings", self.apply_settings)
-        scroll_frame.AccentButton("Start Smoothed Scroll", self.start_smoothed_scroll)
-        scroll_frame.AccentButton("Stop Smoothed Scroll", self.stop_smoothed_scroll)
-        scroll_frame.AccentButton("Reset to Default", self.reset_to_default)
+        ttk.Label(frame, text="Scroll Distance (px):").pack(anchor="w", padx=5, pady=5)
+        ttk.Spinbox(frame, from_=0, to=2000, textvariable=self.distance_var).pack(anchor="w", fill="x", padx=5, pady=5)
+
+        ttk.Label(frame, text="Acceleration (x):").pack(anchor="w", padx=5, pady=5)
+        ttk.Entry(frame, textvariable=self.acceleration_var).pack(anchor="w", fill="x", padx=5, pady=5)
+
+        ttk.Label(frame, text="Opposite Acceleration (x):").pack(anchor="w", padx=5, pady=5)
+        ttk.Entry(frame, textvariable=self.opposite_acceleration_var).pack(anchor="w", fill="x", padx=5, pady=5)
+
+        ttk.Label(frame, text="Acceleration Delta (ms):").pack(anchor="w", padx=5, pady=5)
+        ttk.Entry(frame, textvariable=self.acceleration_delta_var).pack(anchor="w", fill="x", padx=5, pady=5)
+
+        ttk.Label(frame, text="Max Acceleration Steps:").pack(anchor="w", padx=5, pady=5)
+        ttk.Spinbox(frame, from_=0, to=30, textvariable=self.acceleration_max_var).pack(anchor="w", fill="x", padx=5, pady=5)
+
+        ttk.Label(frame, text="Scroll Duration (ms):").pack(anchor="w", padx=5, pady=5)
+        ttk.Spinbox(frame, from_=0, to=1000, textvariable=self.duration_var).pack(anchor="w", fill="x", padx=5, pady=5)
+
+        ttk.Label(frame, text="Pulse Scale (x):").pack(anchor="w", padx=5, pady=5)
+        ttk.Entry(frame, textvariable=self.pulse_scale_var).pack(anchor="w", fill="x", padx=5, pady=5)
+
+        ttk.Checkbutton(frame, text="Inverted Scroll", variable=self.inverted_scroll_var).pack(anchor="w", padx=5, pady=5)
+
+        theme_frame = ttk.LabelFrame(self.root, text="Theme Settings")
+        theme_frame.pack(padx=10, pady=10, fill="x")
+        
+        ttk.Radiobutton(theme_frame, text="Dark Theme", variable=self.theme_var, value="dark", command=self.apply_theme).pack(anchor="w", padx=5, pady=5)
+        ttk.Radiobutton(theme_frame, text="Light Theme", variable=self.theme_var, value="light", command=self.apply_theme).pack(anchor="w", padx=5, pady=5)
+
+        ttk.Button(frame, text="Apply Settings", command=self.apply_settings).pack(fill="x", pady=5)
+        ttk.Button(frame, text="Start Smoothed Scroll", command=self.start_smoothed_scroll).pack(fill="x", pady=5)
+        ttk.Button(frame, text="Stop Smoothed Scroll", command=self.stop_smoothed_scroll).pack(fill="x", pady=5)
+        ttk.Button(frame, text="Reset to Default", command=self.reset_to_default).pack(fill="x", pady=5)
 
     def apply_settings(self):
         if self.smoothed_scroll_process and self.smoothed_scroll_process.is_alive():
@@ -82,6 +112,12 @@ class ScrollConfigApp(TKMT.ThemedTKinterFrame):
 
         self.save_config()
         self.start_smoothed_scroll()
+
+    def apply_theme(self):
+        theme = self.theme_var.get()
+        sv_ttk.set_theme(theme)
+        self.config["theme"] = theme
+        self.save_config()
 
     def start_smoothed_scroll(self):
         if self.smoothed_scroll_process and self.smoothed_scroll_process.is_alive():
@@ -113,14 +149,12 @@ class ScrollConfigApp(TKMT.ThemedTKinterFrame):
                 enabled=False
             ))
 
-        smoothed_scroll_config = SmoothedScrollConfig(
-            app_config=app_configs
-        )
+        smoothed_scroll_config = SmoothedScrollConfig(app_config=app_configs)
 
         self.smoothed_scroll_process = multiprocessing.Process(
             target=smoothed_scroll_task,
             args=(smoothed_scroll_config,),
-            daemon=True  # Ensure subprocess terminates with the main process
+            daemon=True
         )
         self.smoothed_scroll_process.start()
 
@@ -138,7 +172,6 @@ class ScrollConfigApp(TKMT.ThemedTKinterFrame):
 
     def load_disabled_apps(self):
         blocklist_path = './assets/blocklist.json'
-
         if not os.path.exists(blocklist_path):
             return []
 
@@ -166,8 +199,8 @@ class ScrollConfigApp(TKMT.ThemedTKinterFrame):
 
     def save_config(self):
         config = {
-            "theme": "sun-valley",
-            "mode": "light",
+            "theme": self.config["theme"],
+            "mode": self.config["mode"],
             "scroll_distance": self.distance_var.get(),
             "acceleration": self.acceleration_var.get(),
             "opposite_acceleration": self.opposite_acceleration_var.get(),
@@ -175,7 +208,8 @@ class ScrollConfigApp(TKMT.ThemedTKinterFrame):
             "acceleration_max": self.acceleration_max_var.get(),
             "scroll_duration": self.duration_var.get(),
             "pulse_scale": self.pulse_scale_var.get(),
-            "inverted_scroll": self.inverted_scroll_var.get()
+            "inverted_scroll": self.inverted_scroll_var.get(),
+            "message_shown": self.config.get("message_shown", False)
         }
 
         with open(CONFIG_FILE_PATH, 'w') as file:
@@ -191,13 +225,18 @@ class ScrollConfigApp(TKMT.ThemedTKinterFrame):
         self.duration_var.set(self.config["scroll_duration"])
         self.pulse_scale_var.set(self.config["pulse_scale"])
         self.inverted_scroll_var.set(self.config["inverted_scroll"])
+        self.theme_var.set(self.config["theme"])
+        self.apply_theme()
 
     def on_closing(self):
         self.stop_smoothed_scroll()
-        messagebox.showinfo(
-            "Smoothed Scroll",
-            "Smoothed Scroll is running from the system tray."
-        )
+        if not self.config.get("message_shown", False):
+            messagebox.showinfo(
+                "Smoothed Scroll",
+                "Smoothed Scroll is running from the system tray."
+            )
+            self.config["message_shown"] = True
+            self.save_config()
         self.root.destroy()
 
 def start_gui_app():

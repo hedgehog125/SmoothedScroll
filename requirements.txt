@@ -1,5 +1,8 @@
 easing-functions==1.0.4
+pillow==10.4.0
 psutil==6.0.0
+pypiwin32==223
+pyproject_hooks==1.2.0
+pystray==0.19.5
 pywin32==306
-TKinterModernThemes==1.10.2
-pystray
+sv-ttk==2.6.0

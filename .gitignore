@@ -2,3 +2,8 @@ __pycache__/*
 __pycache__
 /dist/
 assets/blocklist.json
+*.enc
+*.msg
+/main.dist
+assets/config.json
+assets/blocklist.json

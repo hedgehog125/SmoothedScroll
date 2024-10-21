@@ -40,7 +40,7 @@ class ScrollConfigApp:
     def __init__(self):
         self.config = self.load_config()
         self.root = tk.Tk()
-        self.root.title("Smoothed Scroll GUI")
+        self.root.title("Smoothed Scroll Settings")
         self.root.iconbitmap("./assets/icon.ico")
         self.root.geometry("400x790")
         self.root.resizable(False, False)

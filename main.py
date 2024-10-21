@@ -273,7 +273,7 @@ def toggle_blocklist(icon, process_name):
     write_blocklist(blocklist)
     refresh_menu(icon)
 
-def refresh_menu(icon):
+def refresh_menu(icon, interval=5):
     open_processes = get_open_process_names()
     blocklist = load_blocklist()
     exceptions_menu = [item(process, lambda _, p=process: toggle_blocklist(icon, p), 
@@ -284,6 +284,8 @@ def refresh_menu(icon):
         item('Exit', lambda: stop_icon(icon))
     )
     icon.update_menu()
+    threading.Timer(interval, refresh_menu, [icon]).start()
+
 
 def stop_icon(icon):
     icon.stop()

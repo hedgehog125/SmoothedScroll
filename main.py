@@ -1,3 +1,4 @@
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 import json
@@ -17,6 +18,8 @@ import win32process
 import psutil
 
 CONFIG_FILE_PATH = "./assets/config.json"
+BLOCKLIST_PATH = './assets/blocklist.json'
+ICON_PATH = './assets/icon.ico' 
 DEFAULT_CONFIG = {
     "theme": "dark",
     "scroll_distance": 120,
@@ -37,7 +40,17 @@ def smoothed_scroll_task(config: SmoothedScrollConfig):
         print(f"Error in SmoothedScroll process: {e}")
 
 class ScrollConfigApp:
+    instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls.instance is None:
+            cls.instance = super(ScrollConfigApp, cls).__new__(cls)
+        return cls.instance
+
     def __init__(self):
+        if hasattr(self, 'initialized') and self.initialized:
+            return
+        self.initialized = True
         self.config = self.load_config()
         self.root = tk.Tk()
         self.root.title("Smoothed Scroll Settings")
@@ -58,6 +71,7 @@ class ScrollConfigApp:
         self.smoothed_scroll_process = None
         self.setup_gui()
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.root.withdraw()
 
     def center_window(self):
         self.root.update_idletasks()
@@ -159,13 +173,13 @@ class ScrollConfigApp:
 
     def load_config(self):
         if not os.path.exists(CONFIG_FILE_PATH):
-            return DEFAULT_CONFIG
+            return DEFAULT_CONFIG.copy()
         try:
             with open(CONFIG_FILE_PATH, 'r') as file:
                 config = json.load(file)
                 return config
         except (json.JSONDecodeError, FileNotFoundError):
-            return DEFAULT_CONFIG
+            return DEFAULT_CONFIG.copy()
 
     def save_config(self):
         config = {
@@ -184,7 +198,7 @@ class ScrollConfigApp:
             json.dump(config, file, indent=4)
 
     def reset_to_default(self):
-        self.config = DEFAULT_CONFIG
+        self.config = DEFAULT_CONFIG.copy()
         self.distance_var.set(self.config["scroll_distance"])
         self.acceleration_var.set(self.config["acceleration"])
         self.opposite_acceleration_var.set(self.config["opposite_acceleration"])
@@ -205,15 +219,15 @@ class ScrollConfigApp:
             )
             self.config["message_shown"] = True
             self.save_config()
-        self.root.destroy()
+        self.root.withdraw()
 
-def start_gui_app():
-    multiprocessing.freeze_support()
-    app = ScrollConfigApp()
-    app.root.mainloop()
+    def show(self):
+        self.root.after(0, self._show)
 
-BLOCKLIST_PATH = './assets/blocklist.json'
-ICON_PATH = './assets/icon.ico'  
+    def _show(self):
+        self.root.deiconify()
+        self.root.lift()
+        self.root.focus_force()
 
 def load_icon():
     try:
@@ -262,7 +276,7 @@ def write_blocklist(blocklist):
     except Exception as e:
         print(f"Failed to save blocklist: {e}")
 
-def toggle_blocklist(icon, process_name):
+def toggle_blocklist(icon, process_name, app_instance):
     blocklist = load_blocklist()
     process_name = str(process_name)
     if process_name in blocklist:
@@ -270,37 +284,37 @@ def toggle_blocklist(icon, process_name):
     else:
         blocklist.append(process_name)
     write_blocklist(blocklist)
-    refresh_menu(icon)
+    build_menu(icon, app_instance)
 
-def refresh_menu(icon, interval=5):
+def build_menu(icon, app_instance):
     open_processes = get_open_process_names()
     blocklist = load_blocklist()
-    exceptions_menu = [item(process, lambda _, p=process: toggle_blocklist(icon, p), 
-                             checked=lambda item, p=process: p in blocklist) for process in open_processes]
+    exceptions_submenu = pystray.Menu(*[
+        item(process, lambda _, p=process: toggle_blocklist(icon, p, app_instance),
+             checked=lambda item, p=process: p in blocklist) for process in open_processes
+    ])
     icon.menu = pystray.Menu(
-        item('Exceptions', pystray.Menu(*exceptions_menu)),
-        item('Open Settings', lambda _: open_gui(icon)),
-        item('Exit', lambda: stop_icon(icon))
+        item('Exceptions', exceptions_submenu),
+        item('Open Settings', lambda _: app_instance.show()),
+        item('Exit', lambda _: stop_icon(icon))
     )
     icon.update_menu()
-    threading.Timer(interval, refresh_menu, [icon]).start()
 
-
-def stop_icon(icon):
-    icon.stop()
-
-def open_gui(icon):
-    icon.stop()
-    threading.Thread(target=start_gui_app).start()
-
-def run_tray():
+def run_tray(app_instance):
     icon_image = load_icon()
     if icon_image is None:
         return
 
     icon = pystray.Icon("SmoothedScroll", icon_image, "Smoothed Scroll")
-    refresh_menu(icon)
+    build_menu(icon, app_instance)
     icon.run()
+
+def stop_icon(icon):
+    icon.stop()
+
+def run_system_tray(app_instance):
+    tray_thread = threading.Thread(target=run_tray, args=(app_instance,), daemon=True)
+    tray_thread.start()
 
 def start_taskbar_icon():
     directory = os.path.dirname(BLOCKLIST_PATH)
@@ -317,9 +331,7 @@ def start_taskbar_icon():
             write_blocklist([])
 
 if __name__ == "__main__":
-    gui_thread = threading.Thread(target=start_gui_app)
-    tray_thread = threading.Thread(target=run_tray)
-    gui_thread.start()
-    tray_thread.start()
-    gui_thread.join()
-    tray_thread.join()
+    app = ScrollConfigApp()
+    start_taskbar_icon()
+    run_system_tray(app)
+    app.root.mainloop()

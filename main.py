@@ -279,8 +279,8 @@ def refresh_menu(icon):
     exceptions_menu = [item(process, lambda _, p=process: toggle_blocklist(icon, p), 
                              checked=lambda item, p=process: p in blocklist) for process in open_processes]
     icon.menu = pystray.Menu(
-        item('Open Settings', lambda _: open_gui(icon)),
         item('Exceptions', pystray.Menu(*exceptions_menu)),
+        item('Open Settings', lambda _: open_gui(icon)),
         item('Exit', lambda: stop_icon(icon))
     )
     icon.update_menu()

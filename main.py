@@ -26,8 +26,7 @@ DEFAULT_CONFIG = {
     "acceleration_max": 14,
     "scroll_duration": 500,
     "pulse_scale": 3.0,
-    "inverted_scroll": False,
-    "message_shown": False
+    "inverted_scroll": False
 }
 
 def smoothed_scroll_task(config: SmoothedScrollConfig):

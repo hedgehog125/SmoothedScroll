@@ -1,7 +1,9 @@
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 import json
 import os
+import shutil
 import multiprocessing
 import threading
 from win32con import VK_SHIFT
@@ -15,10 +17,12 @@ from PIL import Image
 import win32gui
 import win32process
 import psutil
+import sys
 
-CONFIG_FILE_PATH = "./assets/config.json"
-BLOCKLIST_PATH = './assets/blocklist.json'
-ICON_PATH = './assets/icon.ico' 
+APP_DATA_PATH = os.path.join(os.getenv('APPDATA'), 'SmoothedScroll')
+CONFIG_FILE_PATH = os.path.join(APP_DATA_PATH, "config.json")
+BLOCKLIST_PATH = os.path.join(APP_DATA_PATH, 'blocklist.json')
+ICON_PATH = './assets/icon.ico'
 DEFAULT_CONFIG = {
     "theme": "dark",
     "scroll_distance": 120,
@@ -28,7 +32,8 @@ DEFAULT_CONFIG = {
     "acceleration_max": 14,
     "scroll_duration": 500,
     "pulse_scale": 3.0,
-    "inverted_scroll": False
+    "inverted_scroll": False,
+    "autostart": False
 }
 
 def smoothed_scroll_task(config: SmoothedScrollConfig):
@@ -53,11 +58,18 @@ class ScrollConfigApp:
         self.config = self.load_config()
         self.root = tk.Tk()
         self.root.title("Smoothed Scroll Settings")
-        self.root.iconbitmap("./assets/icon.ico")
-        self.root.geometry("400x790")
+        self.root.iconbitmap(ICON_PATH)
+        self.root.geometry("400x840")
         self.root.resizable(False, False)
         self.center_window()
         sv_ttk.set_theme(self.config.get("theme", "dark"))
+        self.create_variables()
+        self.smoothed_scroll_process = None
+        self.setup_gui()
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.root.withdraw()
+
+    def create_variables(self):
         self.distance_var = tk.IntVar(value=self.config.get("scroll_distance", 120))
         self.acceleration_var = tk.DoubleVar(value=self.config.get("acceleration", 1.0))
         self.opposite_acceleration_var = tk.DoubleVar(value=self.config.get("opposite_acceleration", 1.2))
@@ -67,10 +79,7 @@ class ScrollConfigApp:
         self.pulse_scale_var = tk.DoubleVar(value=self.config.get("pulse_scale", 3.0))
         self.inverted_scroll_var = tk.BooleanVar(value=self.config.get("inverted_scroll", False))
         self.theme_var = tk.StringVar(value=self.config.get("theme", "dark"))
-        self.smoothed_scroll_process = None
-        self.setup_gui()
-        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
-        self.root.withdraw()
+        self.autostart_var = tk.BooleanVar(value=self.config.get("autostart", False))
 
     def center_window(self):
         self.root.update_idletasks()
@@ -83,6 +92,13 @@ class ScrollConfigApp:
     def setup_gui(self):
         frame = ttk.LabelFrame(self.root, text="Scroll Settings")
         frame.pack(padx=10, pady=10, fill="x")
+        self.create_scroll_settings(frame)
+        theme_frame = ttk.LabelFrame(self.root, text="Theme Settings")
+        theme_frame.pack(padx=10, pady=10, fill="x")
+        self.create_theme_settings(theme_frame)
+        self.create_autostart_option(frame)
+
+    def create_scroll_settings(self, frame):
         ttk.Label(frame, text="Scroll Distance (px):").pack(anchor="w", padx=5, pady=5)
         ttk.Spinbox(frame, from_=0, to=2000, textvariable=self.distance_var).pack(anchor="w", fill="x", padx=5, pady=5)
         ttk.Label(frame, text="Acceleration (x):").pack(anchor="w", padx=5, pady=5)
@@ -98,14 +114,16 @@ class ScrollConfigApp:
         ttk.Label(frame, text="Pulse Scale (x):").pack(anchor="w", padx=5, pady=5)
         ttk.Entry(frame, textvariable=self.pulse_scale_var).pack(anchor="w", fill="x", padx=5, pady=5)
         ttk.Checkbutton(frame, text="Inverted Scroll", variable=self.inverted_scroll_var).pack(anchor="w", padx=5, pady=5)
-        theme_frame = ttk.LabelFrame(self.root, text="Theme Settings")
-        theme_frame.pack(padx=10, pady=10, fill="x")
-        ttk.Radiobutton(theme_frame, text="Dark Theme", variable=self.theme_var, value="dark", command=self.apply_theme).pack(anchor="w", padx=5, pady=5)
-        ttk.Radiobutton(theme_frame, text="Light Theme", variable=self.theme_var, value="light", command=self.apply_theme).pack(anchor="w", padx=5, pady=5)
-
-        self.action_button = ttk.Button(frame, text="Start Smoothed Scroll", command=self.toggle_smoothed_scroll)
+        self.action_button = ttk.Button(frame, text="Start/Stop Smoothed Scroll", command=self.toggle_smoothed_scroll)
         self.action_button.pack(fill="x", pady=5)
         ttk.Button(frame, text="Reset to Default", command=self.reset_to_default).pack(fill="x", pady=5)
+
+    def create_theme_settings(self, frame):
+        ttk.Radiobutton(frame, text="Dark Theme", variable=self.theme_var, value="dark", command=self.apply_theme).pack(anchor="w", padx=5, pady=5)
+        ttk.Radiobutton(frame, text="Light Theme", variable=self.theme_var, value="light", command=self.apply_theme).pack(anchor="w", padx=5, pady=5)
+
+    def create_autostart_option(self, frame):
+        ttk.Checkbutton(frame, text="Enable Autostart", variable=self.autostart_var, command=self.toggle_autostart).pack(anchor="w", padx=5, pady=5)
 
     def toggle_smoothed_scroll(self):
         if self.smoothed_scroll_process and self.smoothed_scroll_process.is_alive():
@@ -119,6 +137,22 @@ class ScrollConfigApp:
         self.save_config()
         self.start_smoothed_scroll()
 
+    def toggle_autostart(self):
+        self.config["autostart"] = self.autostart_var.get()
+        self.save_config()
+        self.manage_autostart()
+
+    def manage_autostart(self):
+        startup_folder = os.path.join(os.getenv('APPDATA'), 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup')
+        exe_path = sys.executable
+        if self.config["autostart"]:
+            shutil.copyfile(exe_path, os.path.join(startup_folder, "SmoothedScroll.exe"))
+        else:
+            try:
+                os.remove(os.path.join(startup_folder, "SmoothedScroll.exe"))
+            except FileNotFoundError:
+                pass
+
     def apply_theme(self):
         theme = self.theme_var.get()
         sv_ttk.set_theme(theme)
@@ -128,7 +162,6 @@ class ScrollConfigApp:
     def start_smoothed_scroll(self):
         if self.smoothed_scroll_process and self.smoothed_scroll_process.is_alive():
             return
-
         app_configs = [
             AppConfig(
                 regexp=r'.*',
@@ -146,16 +179,13 @@ class ScrollConfigApp:
                 ),
             )
         ]
-
         smoothed_scroll_config = SmoothedScrollConfig(app_config=app_configs)
-
         self.smoothed_scroll_process = multiprocessing.Process(
             target=smoothed_scroll_task,
             args=(smoothed_scroll_config,),
             daemon=True
         )
         self.smoothed_scroll_process.start()
-
         threading.Thread(target=find_steam_games, daemon=True).start()
         self.action_button.config(text="Stop Smoothed Scroll")
 
@@ -191,6 +221,7 @@ class ScrollConfigApp:
             "scroll_duration": self.duration_var.get(),
             "pulse_scale": self.pulse_scale_var.get(),
             "inverted_scroll": self.inverted_scroll_var.get(),
+            "autostart": self.autostart_var.get(),
             "message_shown": self.config.get("message_shown", False)
         }
         with open(CONFIG_FILE_PATH, 'w') as file:
@@ -198,15 +229,7 @@ class ScrollConfigApp:
 
     def reset_to_default(self):
         self.config = DEFAULT_CONFIG.copy()
-        self.distance_var.set(self.config["scroll_distance"])
-        self.acceleration_var.set(self.config["acceleration"])
-        self.opposite_acceleration_var.set(self.config["opposite_acceleration"])
-        self.acceleration_delta_var.set(self.config["acceleration_delta"])
-        self.acceleration_max_var.set(self.config["acceleration_max"])
-        self.duration_var.set(self.config["scroll_duration"])
-        self.pulse_scale_var.set(self.config["pulse_scale"])
-        self.inverted_scroll_var.set(self.config["inverted_scroll"])
-        self.theme_var.set(self.config["theme"])
+        self.create_variables()
         self.apply_theme()
 
     def on_closing(self):
@@ -228,6 +251,11 @@ class ScrollConfigApp:
         self.root.lift()
         self.root.focus_force()
 
+    def exit_app(self):
+        self.stop_smoothed_scroll()
+        self.root.quit()
+        os._exit(0)
+
 def load_icon():
     try:
         return Image.open(ICON_PATH)
@@ -245,7 +273,6 @@ def get_open_process_names():
                 results.add(process_name)
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
-
     processes = set()
     win32gui.EnumWindows(enum_window_callback, processes)
     return sorted(processes)
@@ -288,14 +315,19 @@ def toggle_blocklist(icon, process_name, app_instance):
 def build_menu(icon, app_instance):
     open_processes = get_open_process_names()
     blocklist = load_blocklist()
-    exceptions_submenu = pystray.Menu(*[
+    process_items = [
         item(process, lambda _, p=process: toggle_blocklist(icon, p, app_instance),
              checked=lambda item, p=process: p in blocklist) for process in open_processes
-    ])
+    ]
+    if not app_instance.smoothed_scroll_process or not app_instance.smoothed_scroll_process.is_alive():
+        action_item = item("Start Smoothed Scroll", lambda _: app_instance.toggle_smoothed_scroll())
+    else:
+        action_item = item("Stop Smoothed Scroll", lambda _: app_instance.toggle_smoothed_scroll())
     icon.menu = pystray.Menu(
-        item('Exceptions', exceptions_submenu),
+        action_item,
+        item('Exceptions', pystray.Menu(*process_items)),
         item('Open Settings', lambda _: app_instance.show()),
-        item('Exit', lambda _: stop_icon(icon))
+        item('Exit', lambda _: (app_instance.exit_app(), icon.stop()))
     )
     icon.update_menu()
 
@@ -303,7 +335,6 @@ def run_tray(app_instance):
     icon_image = load_icon()
     if icon_image is None:
         return
-
     icon = pystray.Icon("SmoothedScroll", icon_image, "Smoothed Scroll")
     build_menu(icon, app_instance)
     icon.run()
@@ -316,11 +347,10 @@ def run_system_tray(app_instance):
     tray_thread.start()
 
 def start_taskbar_icon():
-    directory = os.path.dirname(BLOCKLIST_PATH)
-    if not os.path.exists(directory):
-        os.makedirs(directory, exist_ok=True)
+    if not os.path.exists(APP_DATA_PATH):
+        os.makedirs(APP_DATA_PATH, exist_ok=True)
     if not os.path.exists(BLOCKLIST_PATH):
-        write_blocklist([])  
+        write_blocklist([])
     else:
         try:
             blocklist = load_blocklist()

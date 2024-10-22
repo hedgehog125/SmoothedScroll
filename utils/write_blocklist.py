@@ -2,9 +2,10 @@ import os
 import json
 
 def write_blocklist(process):
-    file_path = '../assets/blocklist.json'
+    APP_DATA_PATH = os.path.join(os.getenv('APPDATA'), 'SmoothedScroll')
+    file_path = os.path.join(APP_DATA_PATH, 'blocklist.json')
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
-    # print(file_path)
+    #print(file_path)
     blocklist = []
     
     if os.path.exists(file_path):

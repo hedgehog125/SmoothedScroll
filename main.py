@@ -1,4 +1,3 @@
-
 import tkinter as tk
 from tkinter import ttk, messagebox
 import json
@@ -18,6 +17,7 @@ import win32gui
 import win32process
 import psutil
 import sys
+import webbrowser
 
 APP_DATA_PATH = os.path.join(os.getenv('APPDATA'), 'SmoothedScroll')
 CONFIG_FILE_PATH = os.path.join(APP_DATA_PATH, "config.json")
@@ -59,7 +59,7 @@ class ScrollConfigApp:
         self.root = tk.Tk()
         self.root.title("Smoothed Scroll Settings")
         self.root.iconbitmap(ICON_PATH)
-        self.root.geometry("400x840")
+        self.root.geometry("400x890")
         self.root.resizable(False, False)
         self.center_window()
         sv_ttk.set_theme(self.config.get("theme", "dark"))
@@ -93,9 +93,14 @@ class ScrollConfigApp:
         frame = ttk.LabelFrame(self.root, text="Scroll Settings")
         frame.pack(padx=10, pady=10, fill="x")
         self.create_scroll_settings(frame)
+        
         theme_frame = ttk.LabelFrame(self.root, text="Theme Settings")
         theme_frame.pack(padx=10, pady=10, fill="x")
         self.create_theme_settings(theme_frame)
+
+        other_frame = ttk.LabelFrame(self.root, text="Other")
+        other_frame.pack(padx=10, pady=10, fill="x")
+        self.create_donation_link(other_frame)
         self.create_autostart_option(frame)
 
     def create_scroll_settings(self, frame):
@@ -124,6 +129,12 @@ class ScrollConfigApp:
 
     def create_autostart_option(self, frame):
         ttk.Checkbutton(frame, text="Enable Autostart", variable=self.autostart_var, command=self.toggle_autostart).pack(anchor="w", padx=5, pady=5)
+
+    def create_donation_link(self, frame):
+        ttk.Button(frame, text="Support me", command=self.open_donation_link).pack(anchor="w", padx=5, pady=5)
+
+    def open_donation_link(self):
+        webbrowser.open("https://www.donationalerts.com/r/zachey")
 
     def toggle_smoothed_scroll(self):
         if self.smoothed_scroll_process and self.smoothed_scroll_process.is_alive():

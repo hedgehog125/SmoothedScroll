@@ -7,7 +7,8 @@ on:
 
 jobs:
   build-and-release:
-    runs-on: self-hosted
+    runs-on: windows-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -37,9 +38,9 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         with:
-          tag_name: v1.${{ github.run_number }}
-          release_name: "Release v1.${{ github.run_number }}"
-          body: "Automatic release v1.${{ github.run_number }}"
+          tag_name: v1.0.${{ github.run_number }}
+          release_name: "Release v1.0.${{ github.run_number }}"
+          body: "Automatic release v1.0.${{ github.run_number }}"
           draft: false
           prerelease: false
         env:
@@ -52,3 +53,5 @@ jobs:
           asset_path: ./SmoothedScroll.exe
           asset_name: SmoothedScroll.exe
           asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

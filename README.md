@@ -1,6 +1,6 @@
-# <img src='./assets/icon.png' alt='🖱️' width='30' height='30'/> Smmoothed Scroll
+# <img src='./assets/icon.png' alt='🖱️' width='30' height='30'/> Smoothed Scroll
 
-**Smmoothed Scroll** is an open-source program written in Python that brings smooth scrolling to all Windows applications. It serves as a free alternative to the proprietary SmoothScroll Windows. With **Smmoothed Scroll**, you can enjoy smooth scrolling with complete control over the settings, automatic startup, and smart game detection that disables smooth scrolling when you launch Steam games. You can also add custom exclusions for specific applications.
+**Smoothed Scroll** is an open-source program written in Python that brings smooth scrolling to all Windows applications. It serves as a free alternative to the proprietary SmoothScroll Windows. With **Smoothed Scroll**, you can enjoy smooth scrolling with complete control over the settings, automatic startup, and smart game detection that disables smooth scrolling when you launch Steam games. You can also add custom exclusions for specific applications.
 
 ## 📝 Features
 
@@ -15,12 +15,12 @@
 ### 📥 Download from GitHub Releases
 
 1. Head over to the [GitHub Releases](https://github.com/zachey01/SmoothedScroll/releases) page.
-2. Download the latest version of Smmoothed Scroll as an executable.
+2. Download the latest version of Smoothed Scroll as an executable.
 3. Run the executable and follow the installation prompts.
 
 ### 🔧 Building from Source
 
-If you'd like to build **Smmoothed Scroll** from source, follow these steps:
+If you'd like to build **Smoothed Scroll** from source, follow these steps:
 
 #### Prerequisites:
 
@@ -54,7 +54,7 @@ This command will create a standalone executable for Windows.
 
 ## 📜 License
 
-Smmoothed Scroll is licensed under the **GNU General Public License**. For more information, see the `LICENSE` file in the repository.
+Smoothed Scroll is licensed under the **GNU General Public License**. For more information, see the `LICENSE` file in the repository.
 
 ## 🤝 Contributions
 

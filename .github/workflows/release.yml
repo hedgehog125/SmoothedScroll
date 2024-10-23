@@ -6,24 +6,26 @@ on:
       - main
 
 jobs:
-  build:
+  build-and-release:
     runs-on: windows-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-      - name: Set up Python environment
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.12.5"
 
-      - name: Install Requirements
+      - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Increase version
+      - name: Increase Version
         id: version
         shell: pwsh
         run: |
@@ -49,32 +51,19 @@ jobs:
         run: |
           nuitka --onefile main.py --enable-plugin=tk-inter --jobs=8 --static-libpython=no \
                  --remove-output --standalone --windows-disable-console \
-                 --windows-icon-from-ico=./assets/icon.ico --output-filename=SmoothedScroll
+                 --windows-icon-from-ico=./assets/icon.ico --output-filename=SmoothedScroll.exe
 
-      - name: Create tag and push
+      - name: Configure Git
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
 
+      - name: Create and Push Tag
+        run: |
           git tag "v${{ env.version }}"
           git push origin "v${{ env.version }}"
 
-      - name: Check for existing releases
-        id: check_releases
-        shell: pwsh
-        run: |
-          $releases = gh release list
-          if (-not $releases) {
-            Write-Host "No releases found, creating first release."
-            $first_release = $true
-          } else {
-            Write-Host "Releases found."
-            $first_release = $false
-          }
-          echo "first_release=$first_release" >> $env:GITHUB_ENV
-
       - name: Create GitHub Release
-        id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -84,7 +73,7 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Upload binary to release
+      - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}

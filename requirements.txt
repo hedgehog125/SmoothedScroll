@@ -6,4 +6,4 @@ pyproject_hooks==1.2.0
 pystray==0.19.5
 pywin32==306
 sv-ttk==2.6.0
-nuitka==0.9.27
+nuitka==2.4.10

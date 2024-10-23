@@ -1,4 +1,4 @@
-# 🖱️ Smmoothed Scroll
+# <img src='./assets/icon.png' alt='🖱️' width='30' height='30'/> Smmoothed Scroll
 
 **Smmoothed Scroll** is an open-source program written in Python that brings smooth scrolling to all Windows applications. It serves as a free alternative to the proprietary SmoothScroll Windows. With **Smmoothed Scroll**, you can enjoy smooth scrolling with complete control over the settings, automatic startup, and smart game detection that disables smooth scrolling when you launch Steam games. You can also add custom exclusions for specific applications.
 

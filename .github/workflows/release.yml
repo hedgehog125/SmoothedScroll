@@ -27,19 +27,13 @@ jobs:
 
       - name: Increase Version
         id: version
-        shell: pwsh
         run: |
-          $latest_tag = git describe --tags $(git rev-list --tags --max-count=1) 2>$null
-          if (-not $latest_tag) {
-            $new_version = "1.0.0"
-          } else {
-            $version_parts = $latest_tag.TrimStart('v').Split('.')
-            $major = $version_parts[0]
-            $minor = $version_parts[1]
-            $patch = [int]$version_parts[2] + 1
-            $new_version = "$major.$minor.$patch"
+          latest_tag=$(git describe --tags $(git rev-list --tags --max-count=1))
+          [[ -z "$latest_tag" ]] && new_version="1.0.0" || {
+            IFS='.' read -r major minor patch <<< "${latest_tag:1}"
+            new_version="$major.$minor.$((patch + 1))"
           }
-          echo "version=$new_version" >> $env:GITHUB_ENV
+          echo "new_version=$new_version" >> $GITHUB_ENV
 
       - name: Build with Nuitka
         uses: Nuitka/Nuitka-Action@main
@@ -63,18 +57,11 @@ jobs:
 
       - name: Create and Push Tag
         run: |
-          git tag "v${{ env.version }}"
-          git push origin "v${{ env.version }}"
+          git tag "v$new_version"
+          git push origin "v$new_version"
 
       - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: "v${{ env.version }}"
-          release_name: "Release v${{ env.version }}"
-          draft: false
-          prerelease: false
+        run: gh release create "v$new_version" ./build/SmoothedScroll.exe --title "Release v$new_version" --notes "Release version v$new_version"
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1

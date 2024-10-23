@@ -25,16 +25,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Increase Version
-        id: version
-        run: |
-          latest_tag=$(git describe --tags $(git rev-list --tags --max-count=1))
-          [[ -z "$latest_tag" ]] && new_version="1.0.0" || {
-            IFS='.' read -r major minor patch <<< "${latest_tag:1}"
-            new_version="$major.$minor.$((patch + 1))"
-          }
-          echo "new_version=$new_version" >> $GITHUB_ENV
-
       - name: Build with Nuitka
         uses: Nuitka/Nuitka-Action@main
         with:
@@ -55,13 +45,17 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
 
-      - name: Create and Push Tag
-        run: |
-          git tag "v$new_version"
-          git push origin "v$new_version"
-
-      - name: Create GitHub Release
-        run: gh release create "v$new_version" ./build/SmoothedScroll.exe --title "Release v$new_version" --notes "Release version v$new_version"
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v1.${{ github.run_number }}
+          release_name: "Release v1.${{ github.run_number }}"
+          body: "Automatic release v1.${{ github.run_number }}"
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1

@@ -12,11 +12,7 @@
 
 ## 🚀 Installation
 
-### 📥 Download from GitHub Releases
-
-1. Head over to the [GitHub Releases](https://github.com/zachey01/SmoothedScroll/releases) page.
-2. Download the latest version of Smoothed Scroll as an executable.
-3. Run the executable and follow the installation prompts.
+### 📥 [Download from GitHub Releases](https://github.com/zachey01/SmoothedScroll/releases/latest/download/SmoothedScroll.exe)
 
 ### 🔧 Building from Source
 

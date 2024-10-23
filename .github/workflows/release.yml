@@ -26,19 +26,8 @@ jobs:
           pip install -r requirements.txt
 
       - name: Build with Nuitka
-        uses: Nuitka/Nuitka-Action@main
-        with:
-          main_file: main.py
-          output_dir: ./build
-          output_name: SmoothedScroll.exe
-          icon: ./assets/icon.ico
-          enable_plugin: tk-inter
-          jobs: 8
-          standalone: true
-          onefile: true
-          remove_output: true
-          windows_disable_console: true
-          static_libpython: no
+        run: |
+          nuitka --onefile main.py --enable-plugin=tk-inter --jobs=8 --static-libpython=no --remove-output --standalone --windows-disable-console --windows-icon-from-ico=./assets/icon.ico --output-filename=SmoothedScroll
 
       - name: Configure Git
         run: |

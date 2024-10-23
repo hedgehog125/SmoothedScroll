@@ -27,7 +27,7 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          nuitka --onefile main.py --enable-plugin=tk-inter --jobs=8 --static-libpython=no --remove-output --standalone --windows-disable-console --windows-icon-from-ico=./assets/icon.ico --output-filename=SmoothedScroll
+          python -m nuitka --onefile main.py --enable-plugin=tk-inter --jobs=8 --static-libpython=no --remove-output --standalone --windows-disable-console --windows-icon-from-ico=./assets/icon.ico --output-filename=SmoothedScroll
 
       - name: Configure Git
         run: |

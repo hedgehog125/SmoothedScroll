@@ -29,29 +29,32 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          Write-Host "Checking for the latest tag..."
           $latest_tag = git describe --tags $(git rev-list --tags --max-count=1) 2>$null
-
           if (-not $latest_tag) {
-            Write-Host "No tags found, setting version to 1.0.0."
             $new_version = "1.0.0"
           } else {
-            Write-Host "Latest tag: $latest_tag"
             $version_parts = $latest_tag.TrimStart('v').Split('.')
             $major = $version_parts[0]
             $minor = $version_parts[1]
             $patch = [int]$version_parts[2] + 1
             $new_version = "$major.$minor.$patch"
           }
-
-          Write-Host "New version: $new_version"
           echo "version=$new_version" >> $env:GITHUB_ENV
 
       - name: Build with Nuitka
-        run: |
-          nuitka --onefile main.py --enable-plugin=tk-inter --jobs=8 --static-libpython=no \
-                 --remove-output --standalone --windows-disable-console \
-                 --windows-icon-from-ico=./assets/icon.ico --output-filename=SmoothedScroll.exe
+        uses: Nuitka/Nuitka-Action@main
+        with:
+          main_file: main.py
+          output_dir: ./build
+          output_name: SmoothedScroll.exe
+          icon: ./assets/icon.ico
+          enable_plugin: tk-inter
+          jobs: 8
+          standalone: true
+          onefile: true
+          remove_output: true
+          windows_disable_console: true
+          static_libpython: no
 
       - name: Configure Git
         run: |
@@ -77,6 +80,6 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./SmoothedScroll.exe
+          asset_path: ./build/SmoothedScroll.exe
           asset_name: SmoothedScroll.exe
           asset_content_type: application/octet-stream

@@ -17,8 +17,6 @@ import win32process
 import psutil
 import sys
 import webbrowser
-import shutil
-import win32com.client
 
 APP_DATA_PATH = os.path.join(os.getenv('APPDATA'), 'SmoothedScroll')
 CONFIG_FILE_PATH = os.path.join(APP_DATA_PATH, "config.json")

@@ -1,9 +1,7 @@
 import re
 from time import perf_counter
 from typing import Optional, Union, Type, Literal, Iterable
-
 from win32con import VK_SHIFT, VK_CONTROL, VK_MENU
-
 from . import EasingFunction
 
 class ScrollConfig:

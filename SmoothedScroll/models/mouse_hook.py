@@ -1,6 +1,5 @@
 import ctypes.wintypes
 
-
 class MSLLHOOKSTRUCT(ctypes.Structure):
     _fields_ = [
         ('x', ctypes.c_long),

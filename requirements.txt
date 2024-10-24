@@ -7,3 +7,4 @@ pystray
 pywin32
 sv-ttk
 nuitka
+winshell

@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import json
 import os
-import shutil
 import multiprocessing
 import threading
 from win32con import VK_SHIFT
@@ -18,6 +17,8 @@ import win32process
 import psutil
 import sys
 import webbrowser
+import shutil
+import win32com.client
 
 APP_DATA_PATH = os.path.join(os.getenv('APPDATA'), 'SmoothedScroll')
 CONFIG_FILE_PATH = os.path.join(APP_DATA_PATH, "config.json")
@@ -155,14 +156,25 @@ class ScrollConfigApp:
 
     def manage_autostart(self):
         startup_folder = os.path.join(os.getenv('APPDATA'), 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup')
-        exe_path = sys.executable
+        exe_path = os.path.abspath(sys.argv[0])
+        shortcut_path = os.path.join(startup_folder, "SmoothedScroll.lnk")
+
         if self.config["autostart"]:
-            shutil.copyfile(exe_path, os.path.join(startup_folder, "SmoothedScroll.exe"))
+            self.create_shortcut(exe_path, shortcut_path)
         else:
             try:
-                os.remove(os.path.join(startup_folder, "SmoothedScroll.exe"))
+                os.remove(shortcut_path)
             except FileNotFoundError:
                 pass
+
+    def create_shortcut(self, exe_path, shortcut_path):
+        import winshell  
+        with winshell.shortcut(shortcut_path) as shortcut:
+            shortcut.path = exe_path
+            shortcut.working_directory = os.path.dirname(exe_path)
+            shortcut.description = "Smoothed Scroll Autostart"
+            shortcut.icon_location = (exe_path, 0) 
+
 
     def apply_theme(self):
         theme = self.theme_var.get()

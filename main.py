@@ -22,7 +22,7 @@ import webbrowser
 APP_DATA_PATH = os.path.join(os.getenv('APPDATA'), 'SmoothedScroll')
 CONFIG_FILE_PATH = os.path.join(APP_DATA_PATH, "config.json")
 BLOCKLIST_PATH = os.path.join(APP_DATA_PATH, 'blocklist.json')
-ICON_PATH = './assets/icon.ico'
+ICON_PATH = os.path.join(os.path.dirname(__file__), 'assets', 'icon.ico') 
 DEFAULT_CONFIG = {
     "theme": "dark",
     "scroll_distance": 120,
@@ -93,7 +93,7 @@ class ScrollConfigApp:
         frame = ttk.LabelFrame(self.root, text="Scroll Settings")
         frame.pack(padx=10, pady=10, fill="x")
         self.create_scroll_settings(frame)
-        
+
         theme_frame = ttk.LabelFrame(self.root, text="Theme Settings")
         theme_frame.pack(padx=10, pady=10, fill="x")
         self.create_theme_settings(theme_frame)

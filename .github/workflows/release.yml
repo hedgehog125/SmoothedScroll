@@ -27,7 +27,7 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          echo 'yes' | python -m nuitka --onefile main.py --enable-plugin=tk-inter --jobs=12 --remove-output --standalone --windows-icon-from-ico=./assets/icon.ico --output-filename=SmoothedScroll --include-data-dir=./assets=./assets --include-plugin-files="assets/*" --windows-disable-console
+          echo 'yes' | python -m nuitka --onefile main.py --enable-plugin=tk-inter --jobs=12 --remove-output --standalone --windows-icon-from-ico=./assets/icon.ico --output-filename=SmoothedScroll --include-data-dir=./assets=./assets --include-plugin-files="assets/*" --windows-disable-console --file-description="Smooth Scrolling for all Windows apps" --product-name="Smoothed Scroll" --company-name="Zachey"
 
       - name: Configure Git
         run: |

@@ -25,9 +25,27 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Build with Nuitka
+      - name: Install NSIS (for creating installer)
+        run: choco install nsis -y
+
+      - name: Build Portable Version with Nuitka
         run: |
-          echo 'yes' | python -m nuitka --onefile main.py --enable-plugin=tk-inter --jobs=12 --remove-output --standalone --windows-icon-from-ico=./assets/icon.ico --output-filename=SmoothedScroll --include-data-dir=./assets=./assets --include-plugin-files="assets/*" --windows-disable-console --file-description="Smooth Scrolling for all Windows apps" --product-name="Smoothed Scroll" --company-name="Zachey" --product-version="1.0.${{ github.run_number }}" --file-version="1.0.${{ github.run_number }}"
+          echo 'yes' | python -m nuitka --onefile main.py --enable-plugin=tk-inter --jobs=12 --remove-output --standalone --windows-icon-from-ico=./assets/icon.ico --output-filename=SmoothedScroll_Portable --include-data-dir=./assets=./assets --include-plugin-files="assets/*" --windows-disable-console --file-description="Smooth Scrolling for all Windows apps" --product-name="Smoothed Scroll" --company-name="Zachey" --product-version="1.0.${{ github.run_number }}" --file-version="1.0.${{ github.run_number }}"
+
+      - name: Create Setup Script for NSIS
+        run: |
+          echo 'OutFile "SmoothedScroll_Setup.exe"' > setup_script.nsi
+          echo 'InstallDir "$PROGRAMFILES\\SmoothedScroll"' >> setup_script.nsi
+          echo 'Page directory' >> setup_script.nsi
+          echo 'Page instfiles' >> setup_script.nsi
+          echo 'Section ""' >> setup_script.nsi
+          echo '  SetOutPath "$INSTDIR"' >> setup_script.nsi
+          echo '  File "SmoothedScroll_Portable.exe"' >> setup_script.nsi
+          echo '  CreateShortcut "$DESKTOP\\SmoothedScroll.lnk" "$INSTDIR\\SmoothedScroll_Portable.exe"' >> setup_script.nsi
+          echo 'SectionEnd' >> setup_script.nsi
+
+      - name: Build Setup Version with NSIS
+        run: makensis setup_script.nsi
 
       - name: Configure Git
         run: |
@@ -46,12 +64,22 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Release Asset
+      - name: Upload Portable Version
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./SmoothedScroll.exe
-          asset_name: SmoothedScroll.exe
+          asset_path: ./SmoothedScroll_Portable.exe
+          asset_name: SmoothedScroll_Portable.exe
+          asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Setup Version
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./SmoothedScroll_Setup.exe
+          asset_name: SmoothedScroll_Setup.exe
           asset_content_type: application/octet-stream
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

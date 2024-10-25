@@ -2,6 +2,10 @@
 
 **Smoothed Scroll** is an open-source program written in Python that brings smooth scrolling to all Windows applications. With **Smoothed Scroll**, you can enjoy smooth scrolling with complete control over the settings, automatic startup, and smart game detection that disables smooth scrolling when you launch Steam games. You can also add custom exclusions for specific applications.
 
+[![Build and Release](https://github.com/zachey01/SmoothedScroll/actions/workflows/release.yml/badge.svg)](https://github.com/zachey01/SmoothedScroll/actions)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://github.com/zachey01/SmoothedScroll/blob/main/LICENSE)
+[![Python 3.6](https://img.shields.io/badge/Python-3.12.5-blue.svg)](https://www.python.org/downloads/release/python-360/)
+
 ## 📝 Features
 
 - 🖱️ **Smooth scrolling** for all Windows applications.
@@ -12,7 +16,7 @@
 
 ## 🚀 Installation
 
-### 📥 [Download from GitHub Releases](https://github.com/zachey01/SmoothedScroll/releases/latest/download/SmoothedScroll.exe)
+### 📥 [Download from GitHub Releases](https://github.com/zachey01/SmoothedScroll/releases/latest/download/SmoothedScroll_Setup.exe)
 
 ### 🔧 Building from Source
 
@@ -20,7 +24,7 @@ If you'd like to build **Smoothed Scroll** from source, follow these steps:
 
 #### Prerequisites:
 
-- Python 3.x installed.
+- Python 3.12.x installed.
 - `git` installed.
 
 #### Clone the Repository
@@ -43,14 +47,10 @@ pip install -r requirements.txt
 After installing the dependencies, use **Nuitka** to build the standalone executable:
 
 ```bash
-nuitka --onefile main.py --enable-plugin=tk-inter --jobs=4 --static-libpython=no --remove-output --standalone --windows-disable-console --windows-icon-from-ico=./assets/icon.ico --output-filename=SmoothedScroll
+py -m nuitka --onefile main.py --enable-plugin=tk-inter --jobs=12 --remove-output --standalone --windows-icon-from-ico=./assets/icon.ico --output-filename=SmoothedScroll --include-data-dir=./assets=./assets --include-plugin-files="assets/*" --windows-disable-console
 ```
 
 This command will create a standalone executable for Windows.
-
-## 📜 License
-
-Smoothed Scroll is licensed under the **GNU General Public License**. For more information, see the `LICENSE` file in the repository.
 
 ## 🤝 Contributions
 

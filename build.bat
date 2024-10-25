@@ -1,1 +1,0 @@
-py -m nuitka --onefile main.py --enable-plugin=tk-inter --jobs=12 --remove-output --standalone --windows-icon-from-ico=./assets/icon.ico --output-filename=SmoothedScroll --include-data-dir=./assets=./assets --include-plugin-files="assets/*" --windows-disable-console

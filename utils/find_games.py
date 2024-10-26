@@ -1,9 +1,9 @@
 import psutil
 import time
 import os
-from .write_blocklist import write_blocklist
+from utils.blocklist import write_blocklist, load_blocklist
 
-def find_steam_games():
+def find_games():
     while True: 
         try:
             for proc in psutil.process_iter(['pid', 'name', 'exe']):
@@ -12,8 +12,14 @@ def find_steam_games():
                     children = parent.children(recursive=True)
                     for child in children:
                         if child.exe() and "steamwebhelper" not in child.name().lower():
-                            exe_name = os.path.splitext(os.path.basename(child.exe()))[0]
-                            write_blocklist(exe_name + '.exe')
+                            exe_name = os.path.splitext(os.path.basename(child.exe()))[0] + '.exe'
+                            blocklist = load_blocklist()
+                            if exe_name not in blocklist:
+                                blocklist.append(exe_name)  
+                                write_blocklist(blocklist) 
+                            else:
+                                print(f"{exe_name} уже в блоклисте.")
+
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             continue
         time.sleep(5)

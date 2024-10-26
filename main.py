@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-import json
 import os
 import multiprocessing
 import threading
@@ -8,7 +7,6 @@ from win32con import VK_SHIFT
 import sv_ttk
 import easing_functions
 from SmoothedScroll import SmoothedScroll, SmoothedScrollConfig, AppConfig, ScrollConfig
-from utils.steam_blocklist import find_steam_games
 import pystray
 from pystray import MenuItem as item
 from PIL import Image
@@ -18,22 +16,13 @@ import psutil
 import sys
 import webbrowser
 
+from utils.blocklist import load_blocklist, write_blocklist, toggle_blocklist
+from utils.config import load_config, save_config, DEFAULT_CONFIG 
+from utils.find_games import find_games
+
+BLOCKLIST_PATH = os.path.join(os.getenv('APPDATA'), 'SmoothedScroll', 'blocklist.json')
 APP_DATA_PATH = os.path.join(os.getenv('APPDATA'), 'SmoothedScroll')
-CONFIG_FILE_PATH = os.path.join(APP_DATA_PATH, "config.json")
-BLOCKLIST_PATH = os.path.join(APP_DATA_PATH, 'blocklist.json')
-ICON_PATH = os.path.join(os.path.dirname(__file__), 'assets', 'icon.ico') 
-DEFAULT_CONFIG = {
-    "theme": "dark",
-    "scroll_distance": 120,
-    "acceleration": 1.0,
-    "opposite_acceleration": 1.2,
-    "acceleration_delta": 70,
-    "acceleration_max": 14,
-    "scroll_duration": 500,
-    "pulse_scale": 3.0,
-    "inverted_scroll": False,
-    "autostart": False
-}
+ICON_PATH = os.path.join(os.path.dirname(__file__), 'assets', 'icon.ico')
 
 def smoothed_scroll_task(config: SmoothedScrollConfig):
     try:
@@ -54,7 +43,7 @@ class ScrollConfigApp:
         if hasattr(self, 'initialized') and self.initialized:
             return
         self.initialized = True
-        self.config = self.load_config()
+        self.config = load_config()  
         self.root = tk.Tk()
         self.root.title("Smoothed Scroll Settings")
         self.root.iconbitmap(ICON_PATH)
@@ -145,12 +134,21 @@ class ScrollConfigApp:
     def apply_settings(self):
         if self.smoothed_scroll_process and self.smoothed_scroll_process.is_alive():
             self.stop_smoothed_scroll()
-        self.save_config()
+        self.config["scroll_distance"] = self.distance_var.get()
+        self.config["acceleration"] = self.acceleration_var.get()
+        self.config["opposite_acceleration"] = self.opposite_acceleration_var.get()
+        self.config["acceleration_delta"] = self.acceleration_delta_var.get()
+        self.config["acceleration_max"] = self.acceleration_max_var.get()
+        self.config["scroll_duration"] = self.duration_var.get()
+        self.config["pulse_scale"] = self.pulse_scale_var.get()
+        self.config["inverted_scroll"] = self.inverted_scroll_var.get()
+        self.config["autostart"] = self.autostart_var.get()
+        save_config(self.config) 
         self.start_smoothed_scroll()
 
     def toggle_autostart(self):
         self.config["autostart"] = self.autostart_var.get()
-        self.save_config()
+        save_config(self.config) 
         self.manage_autostart()
 
     def manage_autostart(self):
@@ -172,13 +170,13 @@ class ScrollConfigApp:
             shortcut.path = exe_path
             shortcut.working_directory = os.path.dirname(exe_path)
             shortcut.description = "Smoothed Scroll Autostart"
-            shortcut.icon_location = (exe_path, 0) 
+            shortcut.icon_location = (exe_path, 0)
 
     def apply_theme(self):
         theme = self.theme_var.get()
         sv_ttk.set_theme(theme)
         self.config["theme"] = theme
-        self.save_config()
+        save_config(self.config) 
 
     def start_smoothed_scroll(self):
         if self.smoothed_scroll_process and self.smoothed_scroll_process.is_alive():
@@ -207,7 +205,6 @@ class ScrollConfigApp:
             daemon=True
         )
         self.smoothed_scroll_process.start()
-        threading.Thread(target=find_steam_games, daemon=True).start()
         self.smooth_scroll_started = True
         self.action_button.config(text="Stop Smoothed Scroll")
 
@@ -223,33 +220,6 @@ class ScrollConfigApp:
                 self.smooth_scroll_started = False
                 self.action_button.config(text="Start Smoothed Scroll")
 
-    def load_config(self):
-        if not os.path.exists(CONFIG_FILE_PATH):
-            return DEFAULT_CONFIG.copy()
-        try:
-            with open(CONFIG_FILE_PATH, 'r') as file:
-                config = json.load(file)
-                return config
-        except (json.JSONDecodeError, FileNotFoundError):
-            return DEFAULT_CONFIG.copy()
-
-    def save_config(self):
-        config = {
-            "theme": self.config["theme"],
-            "scroll_distance": self.distance_var.get(),
-            "acceleration": self.acceleration_var.get(),
-            "opposite_acceleration": self.opposite_acceleration_var.get(),
-            "acceleration_delta": self.acceleration_delta_var.get(),
-            "acceleration_max": self.acceleration_max_var.get(),
-            "scroll_duration": self.duration_var.get(),
-            "pulse_scale": self.pulse_scale_var.get(),
-            "inverted_scroll": self.inverted_scroll_var.get(),
-            "autostart": self.autostart_var.get(),
-            "message_shown": self.config.get("message_shown", False)
-        }
-        with open(CONFIG_FILE_PATH, 'w') as file:
-            json.dump(config, file, indent=4)
-
     def reset_to_default(self):
         self.config = DEFAULT_CONFIG.copy()
         self.create_variables()
@@ -262,7 +232,7 @@ class ScrollConfigApp:
                 "Smoothed Scroll is running from the system tray."
             )
             self.config["message_shown"] = True
-            self.save_config()
+            save_config(self.config)
         self.root.withdraw()
 
     def show(self):
@@ -299,46 +269,11 @@ def get_open_process_names():
     win32gui.EnumWindows(enum_window_callback, processes)
     return sorted(processes)
 
-def load_blocklist():
-    if not os.path.exists(BLOCKLIST_PATH):
-        return []
-    try:
-        with open(BLOCKLIST_PATH, 'r', encoding='utf-8') as file:
-            data = file.read().strip()
-            if not data:
-                return []
-            blocklist = json.loads(data)
-            if not isinstance(blocklist, list):
-                return []
-            return [str(item) for item in blocklist]
-    except json.JSONDecodeError:
-        return []
-    except Exception as e:
-        print(f"Unexpected error loading blocklist: {e}")
-        return []
-
-def write_blocklist(blocklist):
-    try:
-        with open(BLOCKLIST_PATH, 'w', encoding='utf-8') as file:
-            json.dump(blocklist, file, indent=2)
-    except Exception as e:
-        print(f"Failed to save blocklist: {e}")
-
-def toggle_blocklist(icon, process_name, app_instance):
-    blocklist = load_blocklist()
-    process_name = str(process_name)
-    if process_name in blocklist:
-        blocklist.remove(process_name)
-    else:
-        blocklist.append(process_name)
-    write_blocklist(blocklist)
-    build_menu(icon, app_instance)
-
 def build_menu(icon, app_instance):
     open_processes = get_open_process_names()
     blocklist = load_blocklist()
     process_items = [
-        item(process, lambda _, p=process: toggle_blocklist(icon, p, app_instance),
+        item(process, lambda _, p=process: toggle_blocklist(p),
              checked=lambda item, p=process: p in blocklist) for process in open_processes
     ]
     if not app_instance.smoothed_scroll_process or not app_instance.smoothed_scroll_process.is_alive():
@@ -373,16 +308,10 @@ def start_taskbar_icon():
         os.makedirs(APP_DATA_PATH, exist_ok=True)
     if not os.path.exists(BLOCKLIST_PATH):
         write_blocklist([])
-    else:
-        try:
-            blocklist = load_blocklist()
-            if not isinstance(blocklist, list):
-                write_blocklist([])
-        except Exception:
-            write_blocklist([])
 
 if __name__ == "__main__":
     app = ScrollConfigApp()
     start_taskbar_icon()
     run_system_tray(app)
     app.root.mainloop()
+    find_games()

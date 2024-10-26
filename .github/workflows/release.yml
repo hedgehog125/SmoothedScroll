@@ -20,14 +20,6 @@ jobs:
         with:
           python-version: "3.12.5"
 
-      - name: Cache Python dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/pip
-            ~/.virtualenvs
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
@@ -44,25 +36,13 @@ jobs:
         run: |
           echo 'OutFile "SmoothedScroll_Setup.exe"' > setup_script.nsi
           echo 'InstallDir "$PROGRAMFILES\\SmoothedScroll"' >> setup_script.nsi
-          echo 'RequestExecutionLevel user' >> setup_script.nsi
-          echo 'Page license "${{ github.workspace }}\\LICENSE"' >> setup_script.nsi
           echo 'Page directory' >> setup_script.nsi
           echo 'Page instfiles' >> setup_script.nsi
           echo 'Section ""' >> setup_script.nsi
           echo '  SetOutPath "$INSTDIR"' >> setup_script.nsi
           echo '  File "SmoothedScroll_Portable.exe"' >> setup_script.nsi
-          echo '  File "LICENSE"' >> setup_script.nsi
           echo '  CreateShortcut "$DESKTOP\\SmoothedScroll.lnk" "$INSTDIR\\SmoothedScroll_Portable.exe"' >> setup_script.nsi
           echo 'SectionEnd' >> setup_script.nsi
-          echo 'Section "Uninstall"' >> setup_script.nsi
-          echo '  Delete "$INSTDIR\\SmoothedScroll_Portable.exe"' >> setup_script.nsi
-          echo '  Delete "$INSTDIR\\LICENSE"' >> setup_script.nsi
-          echo '  Delete "$DESKTOP\\SmoothedScroll.lnk"' >> setup_script.nsi
-          echo '  RMDir "$INSTDIR"' >> setup_script.nsi
-          echo 'SectionEnd' >> setup_script.nsi
-          echo '!include "MUI2.nsh"' >> setup_script.nsi
-          echo 'Name "Smoothed Scroll"' >> setup_script.nsi
-          echo 'Icon "assets/icon.ico"' >> setup_script.nsi
 
       - name: Build Setup Version with NSIS
         run: makensis setup_script.nsi

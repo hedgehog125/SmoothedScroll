@@ -67,6 +67,7 @@ class ScrollConfigApp:
         self.setup_gui()
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.root.withdraw()
+        self.smooth_scroll_started = False
 
     def create_variables(self):
         self.distance_var = tk.IntVar(value=self.config.get("scroll_distance", 120))
@@ -118,7 +119,7 @@ class ScrollConfigApp:
         ttk.Label(frame, text="Pulse Scale (x):").pack(anchor="w", padx=5, pady=5)
         ttk.Entry(frame, textvariable=self.pulse_scale_var).pack(anchor="w", fill="x", padx=5, pady=5)
         ttk.Checkbutton(frame, text="Inverted Scroll", variable=self.inverted_scroll_var).pack(anchor="w", padx=5, pady=5)
-        self.action_button = ttk.Button(frame, text="Start/Stop Smoothed Scroll", command=self.toggle_smoothed_scroll)
+        self.action_button = ttk.Button(frame, text="Start Smoothed Scroll", command=self.toggle_smoothed_scroll)
         self.action_button.pack(fill="x", pady=5)
         ttk.Button(frame, text="Reset to Default", command=self.reset_to_default).pack(fill="x", pady=5)
 
@@ -173,7 +174,6 @@ class ScrollConfigApp:
             shortcut.description = "Smoothed Scroll Autostart"
             shortcut.icon_location = (exe_path, 0) 
 
-
     def apply_theme(self):
         theme = self.theme_var.get()
         sv_ttk.set_theme(theme)
@@ -208,6 +208,7 @@ class ScrollConfigApp:
         )
         self.smoothed_scroll_process.start()
         threading.Thread(target=find_steam_games, daemon=True).start()
+        self.smooth_scroll_started = True
         self.action_button.config(text="Stop Smoothed Scroll")
 
     def stop_smoothed_scroll(self):
@@ -219,6 +220,7 @@ class ScrollConfigApp:
                 print(f"Error terminating SmoothedScroll process: {e}")
             finally:
                 self.smoothed_scroll_process = None
+                self.smooth_scroll_started = False
                 self.action_button.config(text="Start Smoothed Scroll")
 
     def load_config(self):
@@ -254,7 +256,6 @@ class ScrollConfigApp:
         self.apply_theme()
 
     def on_closing(self):
-        self.stop_smoothed_scroll()
         if not self.config.get("message_shown", False):
             messagebox.showinfo(
                 "Smoothed Scroll",

@@ -47,7 +47,7 @@ pip install -r requirements.txt
 After installing the dependencies, use **Nuitka** to build the standalone executable:
 
 ```bash
-py -m nuitka --onefile main.py --enable-plugin=tk-inter --jobs=12 --remove-output --standalone --windows-icon-from-ico=./assets/icon.ico --output-filename=SmoothedScroll --include-data-dir=./assets=./assets --include-plugin-files="assets/*" --windows-disable-console
+py -m nuitka --onefile main.py --enable-plugin=tk-inter --remove-output --standalone --windows-icon-from-ico=./assets/icon.ico --output-filename=SmoothedScroll --include-data-dir=./assets=./assets --include-plugin-files="assets/*" --windows-disable-console
 ```
 
 This command will create a standalone executable for Windows.
@@ -55,6 +55,22 @@ This command will create a standalone executable for Windows.
 ## 🤝 Contributions
 
 Contributions are welcome! Feel free to open issues, submit pull requests, or suggest features.
+
+## ❓ FAQ
+
+### How does **Smoothed Scroll** work?
+
+**Smoothed Scroll** works by intercepting the scroll events in Windows applications and applying a smoothing algorithm to them. This allows for a more fluid scrolling experience compared to the default behavior. The program runs in the background and can be configured to adjust the scrolling speed and behavior according to user preferences.
+
+### Why do antivirus programs block **Smoothed Scroll**?
+
+Antivirus software may flag **Smoothed Scroll** as a potential threat due to its use of **Nuitka** for building the executable. Nuitka compiles Python code into standalone executables, which can sometimes resemble the behavior of malicious software. This is a common occurrence with many legitimate applications that use similar techniques. If you encounter such a warning, you can usually add an exception in your antivirus settings to allow **Smoothed Scroll** to run.
+
+## 📸 Preview
+
+<div style="text-align: center;">
+    <img src=".github/assets/gui.png" alt="GUI Preview" height="450" />
+</div>
 
 ---
 

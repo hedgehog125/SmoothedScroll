@@ -18,7 +18,7 @@ def find_games():
                                 blocklist.append(exe_name)  
                                 write_blocklist(blocklist) 
                             else:
-                                print(f"{exe_name} уже в блоклисте.")
+                                print(f"{exe_name}")
 
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             continue

@@ -1,5 +1,9 @@
 import json
 import os
+import time
+import psutil
+import win32gui
+import win32process
 
 BLOCKLIST_PATH = os.path.join(os.getenv('APPDATA'), 'SmoothedScroll', 'blocklist.json')
 
@@ -37,3 +41,16 @@ def toggle_blocklist(process_name):
         blocklist.append(process_name)
     write_blocklist(blocklist)
     return blocklist
+
+def blocklist_loop(app):
+    blocklist = load_blocklist()
+    while True:
+        active_process_id = win32process.GetWindowThreadProcessId(
+            win32gui.GetForegroundWindow()
+        )[1]
+        active_name = psutil.Process(active_process_id).name()
+
+        app.smoothed_scroll_blocked_by_app = active_name in blocklist
+        app.start_or_stop_smoothed_scroll()
+
+        time.sleep(1)

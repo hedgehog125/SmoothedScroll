@@ -16,7 +16,7 @@ import psutil
 import sys
 import webbrowser
 
-from utils.blocklist import load_blocklist, write_blocklist, toggle_blocklist
+from utils.blocklist import load_blocklist, write_blocklist, toggle_blocklist, blocklist_loop
 from utils.config import load_config, save_config, DEFAULT_CONFIG 
 from utils.find_games import find_games
 
@@ -56,7 +56,10 @@ class ScrollConfigApp:
         self.setup_gui()
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.root.withdraw()
-        self.smooth_scroll_started = False
+        
+        self.smoothed_scroll_enabled = False
+        self.smoothed_scroll_blocked_by_app = False
+        self.smoothed_scroll_running = False # Derived
 
     def create_variables(self):
         self.distance_var = tk.IntVar(value=self.config.get("scroll_distance", 120))
@@ -126,14 +129,12 @@ class ScrollConfigApp:
         webbrowser.open("https://www.donationalerts.com/r/zachey")
 
     def toggle_smoothed_scroll(self):
-        if self.smoothed_scroll_process and self.smoothed_scroll_process.is_alive():
-            self.stop_smoothed_scroll()
-        else:
-            self.apply_settings()
+        self.smoothed_scroll_enabled = not self.smoothed_scroll_enabled
+        self.apply_settings()
 
     def apply_settings(self):
-        if self.smoothed_scroll_process and self.smoothed_scroll_process.is_alive():
-            self.stop_smoothed_scroll()
+        self._stop_smoothed_scroll()
+
         self.config["scroll_distance"] = self.distance_var.get()
         self.config["acceleration"] = self.acceleration_var.get()
         self.config["opposite_acceleration"] = self.opposite_acceleration_var.get()
@@ -143,8 +144,9 @@ class ScrollConfigApp:
         self.config["pulse_scale"] = self.pulse_scale_var.get()
         self.config["inverted_scroll"] = self.inverted_scroll_var.get()
         self.config["autostart"] = self.autostart_var.get()
-        save_config(self.config) 
-        self.start_smoothed_scroll()
+        save_config(self.config)
+
+        self.start_or_stop_smoothed_scroll()
 
     def toggle_autostart(self):
         self.config["autostart"] = self.autostart_var.get()
@@ -178,9 +180,10 @@ class ScrollConfigApp:
         self.config["theme"] = theme
         save_config(self.config) 
 
-    def start_smoothed_scroll(self):
+    def _start_smoothed_scroll(self):
         if self.smoothed_scroll_process and self.smoothed_scroll_process.is_alive():
             return
+        
         app_configs = [
             AppConfig(
                 regexp=r'.*',
@@ -205,20 +208,30 @@ class ScrollConfigApp:
             daemon=True
         )
         self.smoothed_scroll_process.start()
-        self.smooth_scroll_started = True
+        self.smooth_scroll_running = True
         self.action_button.config(text="Stop Smoothed Scroll")
 
-    def stop_smoothed_scroll(self):
-        if self.smoothed_scroll_process and self.smoothed_scroll_process.is_alive():
-            try:
-                self.smoothed_scroll_process.terminate()
-                self.smoothed_scroll_process.join(timeout=5)
-            except Exception as e:
-                print(f"Error terminating SmoothedScroll process: {e}")
-            finally:
-                self.smoothed_scroll_process = None
-                self.smooth_scroll_started = False
-                self.action_button.config(text="Start Smoothed Scroll")
+    def _stop_smoothed_scroll(self):
+        if not self.smoothed_scroll_process or not self.smoothed_scroll_process.is_alive():
+            return
+        
+        try:
+            self.smoothed_scroll_process.terminate()
+            self.smoothed_scroll_process.join(timeout=5)
+        except Exception as e:
+            print(f"Error terminating SmoothedScroll process: {e}")
+        finally:
+            self.smoothed_scroll_process = None
+            self.smooth_scroll_running = False
+            self.action_button.config(text="Start Smoothed Scroll")
+
+    def start_or_stop_smoothed_scroll(self):
+        should_be_running = self.smoothed_scroll_enabled and not self.smoothed_scroll_blocked_by_app
+
+        if should_be_running:
+            self._start_smoothed_scroll()
+        else:
+            self._stop_smoothed_scroll()
 
     def reset_to_default(self):
         self.config = DEFAULT_CONFIG.copy()
@@ -244,7 +257,8 @@ class ScrollConfigApp:
         self.root.focus_force()
 
     def exit_app(self):
-        self.stop_smoothed_scroll()
+        self.smoothed_scroll_enabled = False
+        self.start_or_stop_smoothed_scroll()
         self.root.quit()
         os._exit(0)
 
@@ -313,6 +327,8 @@ if __name__ == "__main__":
     app = ScrollConfigApp()
     start_taskbar_icon()
     run_system_tray(app)
-    app.start_smoothed_scroll()
-    threading.Thread(target=find_games)
+    app.smoothed_scroll_enabled = True
+    app.start_or_stop_smoothed_scroll()
+    threading.Thread(target=find_games).start()
+    threading.Thread(target=blocklist_loop, args=(app,)).start()
     app.root.mainloop()

@@ -313,5 +313,6 @@ if __name__ == "__main__":
     app = ScrollConfigApp()
     start_taskbar_icon()
     run_system_tray(app)
+    app.start_smoothed_scroll()
+    threading.Thread(target=find_games)
     app.root.mainloop()
-    find_games()

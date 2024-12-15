@@ -5,3 +5,8 @@ __pycache__
 *.msg
 /main.dist
 SmoothedScroll.exe
+
+/env
+/.env
+/venv
+/.venv
